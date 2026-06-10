@@ -5,6 +5,8 @@ a Slurm job. The app starts the tunnel on a compute node, shows tunnel status in
 the browser, and lets users connect from their local VS Code client through the
 Remote Tunnels workflow.
 
+![vs code tunnel dialog](screenshots/bc_code_tunnel__My_Interactive%20Sessions.png)
+
 ## Features
 
 - Runs VS Code Remote Tunnel inside a scheduled Slurm allocation.
