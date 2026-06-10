@@ -1,0 +1,30 @@
+<%
+require "yaml"
+
+site_config_path =
+  ENV["OOD_CODE_TUNNEL_SITE_CONFIG"] || "/etc/ood/apps/sys/code_tunnel/site.yml"
+site_config =
+  if File.file?(site_config_path)
+    YAML.safe_load(File.read(site_config_path), aliases: true) || {}
+  else
+    {}
+  end
+
+submit_native = site_config["submit_native"]
+submit_native = [] unless submit_native.is_a?(Array)
+%>
+---
+batch_connect:
+  template: "basic"
+
+script:
+  queue_name: <%= custom_queue %>
+  native:
+    - "--nodes=1"
+    - "--ntasks=1"
+    - "--time=<%= tunnel_hours.to_i %>:00:00"
+    - "--cpus-per-task=<%= num_cpus.to_i %>"
+    - "--mem=<%= num_mem.to_i %>G"
+<% submit_native.each do |arg| %>
+    - "<%= arg %>"
+<% end %>

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+OOD_STAGED_ROOT="<%= session.staged_root %>"
+export OOD_STAGED_ROOT
+
+<%
+require "yaml"
+
+site_config_path =
+  ENV["OOD_CODE_TUNNEL_SITE_CONFIG"] || "/etc/ood/apps/sys/code_tunnel/site.yml"
+site_config =
+  if File.file?(site_config_path)
+    YAML.safe_load(File.read(site_config_path), aliases: true) || {}
+  else
+    {}
+  end
+
+paths = site_config["paths"]
+paths = {} unless paths.is_a?(Hash)
+code_path = paths["code"]
+ttyd_path = paths["ttyd"]
+%>
+<% if code_path && !code_path.empty? %>
+OOD_CODE_PATH_OVERRIDE="<%= code_path %>"
+export OOD_CODE_PATH_OVERRIDE
+<% end %>
+<% if ttyd_path && !ttyd_path.empty? %>
+OOD_TTYD_PATH_OVERRIDE="<%= ttyd_path %>"
+export OOD_TTYD_PATH_OVERRIDE
+<% end %>

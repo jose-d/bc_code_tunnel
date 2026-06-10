@@ -1,0 +1,61 @@
+<%
+info = {}
+info_file = staged_root.join("tunnel-info.yml")
+if info_file.file?
+  info = YAML.safe_load(info_file.read).to_h
+end
+
+status = info["status"].to_s
+tunnel_name = info["tunnel_name"].to_s
+login_url = info["login_url"].to_s
+device_code = info["device_code"].to_s
+session_state =
+  if queued?
+    "queued"
+  elsif starting?
+    "starting"
+  elsif running?
+    "running"
+  elsif completed?
+    "completed"
+  else
+    "other"
+  end
+%>
+
+<p>
+  <strong>VS Code tunnel:</strong>
+  <% if tunnel_name.empty? %>
+    starting
+  <% else %>
+    <code><%= tunnel_name %></code>
+  <% end %>
+</p>
+
+<% if status == "tunnel_ready" %>
+  <div class="alert alert-success" role="alert">
+    <p><strong>Tunnel appears ready.</strong></p>
+    <p>Connect from local VS Code via Remote Explorer -> Tunnels.</p>
+  </div>
+<% elsif status == "waiting_login" || (status.empty? && !login_url.empty? && !device_code.empty?) %>
+  <div class="alert alert-info" role="alert">
+    <p><strong>Device login required</strong></p>
+    <p>
+      <a class="btn btn-primary btn-sm" href="<%= login_url %>" target="_blank" rel="noopener noreferrer">
+        Open Device Login
+      </a>
+    </p>
+    <p>After completing GitHub device login, wait for tunnel confirmation. This card will update automatically.</p>
+    <p><small><a href="<%= login_url %>" target="_blank" rel="noopener noreferrer"><%= login_url %></a></small></p>
+    <p>Enter code <code><%= device_code %></code></p>
+  </div>
+<% elsif session_state == "queued" || session_state == "starting" %>
+  <div class="alert alert-secondary" role="alert">
+    <p>Waiting for the Slurm job to start and initialize the tunnel.</p>
+  </div>
+<% else %>
+  <div class="alert alert-secondary" role="alert">
+    <p>Waiting for tunnel login details to appear.</p>
+    <p>Open the status page if you want the raw live log.</p>
+  </div>
+<% end %>

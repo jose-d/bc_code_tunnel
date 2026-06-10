@@ -1,0 +1,75 @@
+<%
+require "yaml"
+
+site_config_path =
+  ENV["OOD_CODE_TUNNEL_SITE_CONFIG"] || "/etc/ood/apps/sys/code_tunnel/site.yml"
+site_config =
+  if File.file?(site_config_path)
+    YAML.safe_load(File.read(site_config_path), aliases: true) || {}
+  else
+    {}
+  end
+
+partitions = site_config["partitions"]
+partitions = [["compute", "compute"], ["gpu", "gpu"]] unless partitions.is_a?(Array) && !partitions.empty?
+
+hours = site_config["hours"]
+hours = [["4 hours", "4"], ["8 hours", "8"], ["16 hours", "16"]] unless hours.is_a?(Array) && !hours.empty?
+
+cpus = site_config["cpus"]
+cpus = [["4", "4"], ["8", "8"], ["16", "16"]] unless cpus.is_a?(Array) && !cpus.empty?
+
+memory_gb = site_config["memory_gb"]
+memory_gb = [["16", "16"], ["32", "32"], ["64", "64"], ["128", "128"]] unless memory_gb.is_a?(Array) && !memory_gb.empty?
+%>
+---
+cluster: "<%= site_config["cluster"] || "CHANGE_ME" %>"
+title: VS Code Tunnel
+
+form:
+  - custom_queue
+  - tunnel_hours
+  - num_cpus
+  - num_mem
+
+attributes:
+  custom_queue:
+    value: "<%= site_config["default_partition"] || partitions.first.last %>"
+    label: Partition
+    widget: select
+    cacheable: false
+    options:
+<% partitions.each do |label, value| %>
+      - ["<%= label %>", "<%= value %>"]
+<% end %>
+    help: "<%= site_config["partition_help"] || "Set site-specific partitions in /etc/ood/apps/sys/code_tunnel/site.yml." %>"
+
+  tunnel_hours:
+    label: Number of hours
+    widget: select
+    cacheable: false
+    options:
+<% hours.each do |label, value| %>
+      - ["<%= label %>", "<%= value %>"]
+<% end %>
+    value: "<%= site_config["default_hours"] || hours.first.last %>"
+
+  num_cpus:
+    label: CPUs (cores)
+    cacheable: false
+    widget: select
+    options:
+<% cpus.each do |label, value| %>
+      - ["<%= label %>", "<%= value %>"]
+<% end %>
+    value: "<%= site_config["default_num_cpus"] || cpus.first.last %>"
+
+  num_mem:
+    label: Memory (GB)
+    cacheable: false
+    widget: select
+    options:
+<% memory_gb.each do |label, value| %>
+      - ["<%= label %>", "<%= value %>"]
+<% end %>
+    value: "<%= site_config["default_memory_gb"] || memory_gb.first.last %>"

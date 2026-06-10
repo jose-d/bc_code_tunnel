@@ -1,0 +1,32 @@
+cluster: my_cluster
+
+default_partition: compute
+partition_help: Replace these example partitions with values valid for your site.
+partitions:
+  - [Compute, compute]
+  - [GPU, gpu]
+
+hours:
+  - [4 hours, "4"]
+  - [8 hours, "8"]
+  - [16 hours, "16"]
+default_hours: "8"
+
+cpus:
+  - ["4", "4"]
+  - ["8", "8"]
+  - ["16", "16"]
+default_num_cpus: "4"
+
+memory_gb:
+  - ["16", "16"]
+  - ["32", "32"]
+  - ["64", "64"]
+  - ["128", "128"]
+default_memory_gb: "16"
+
+submit_native: []
+
+paths:
+  code: /usr/bin/code
+  ttyd: /usr/bin/ttyd
