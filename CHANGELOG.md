@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 This project follows semantic versioning.
 
+## [0.2.0] - 2026-06-10
+
+### Added
+
+- Optional site-configured GPU-count form control.
+- Site-configured submit formatting for partition placement, walltime, memory,
+  QoS, node/task counts, and GPU GRES requests.
+
 ## [0.1.0] - 2026-06-10
 
 ### Added

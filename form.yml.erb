@@ -1,5 +1,6 @@
 <%
 require "yaml"
+require "json"
 
 site_config_path =
   ENV["OOD_CODE_TUNNEL_SITE_CONFIG"] || "/etc/ood/apps/sys/code_tunnel/site.yml"
@@ -10,8 +11,23 @@ site_config =
     {}
   end
 
+normalize_option = lambda do |option|
+  if option.is_a?(Hash)
+    [
+      option["label"] || option[:label] || option["value"] || option[:value],
+      option["value"] || option[:value] || option["label"] || option[:label],
+      option["form_options"] || option[:form_options] || {},
+    ]
+  elsif option.is_a?(Array)
+    [option[0], option[1], option[2].is_a?(Hash) ? option[2] : {}]
+  else
+    [option, option, {}]
+  end
+end
+
 partitions = site_config["partitions"]
 partitions = [["compute", "compute"], ["gpu", "gpu"]] unless partitions.is_a?(Array) && !partitions.empty?
+partitions = partitions.map { |option| normalize_option.call(option) }
 
 hours = site_config["hours"]
 hours = [["4 hours", "4"], ["8 hours", "8"], ["16 hours", "16"]] unless hours.is_a?(Array) && !hours.empty?
@@ -21,6 +37,12 @@ cpus = [["4", "4"], ["8", "8"], ["16", "16"]] unless cpus.is_a?(Array) && !cpus.
 
 memory_gb = site_config["memory_gb"]
 memory_gb = [["16", "16"], ["32", "32"], ["64", "64"], ["128", "128"]] unless memory_gb.is_a?(Array) && !memory_gb.empty?
+
+gpu_count = site_config["gpu_count"]
+gpu_count = {} unless gpu_count.is_a?(Hash)
+gpu_count_enabled = gpu_count["enabled"] == true
+gpu_count_options = gpu_count["options"]
+gpu_count_options = [["0 GPUs", "0"], ["1 GPU", "1"]] unless gpu_count_options.is_a?(Array) && !gpu_count_options.empty?
 %>
 ---
 cluster: "<%= site_config["cluster"] || "CHANGE_ME" %>"
@@ -28,6 +50,9 @@ title: VS Code Tunnel
 
 form:
   - custom_queue
+<% if gpu_count_enabled %>
+  - gpu_count
+<% end %>
   - tunnel_hours
   - num_cpus
   - num_mem
@@ -39,11 +64,25 @@ attributes:
     widget: select
     cacheable: false
     options:
-<% partitions.each do |label, value| %>
-      - ["<%= label %>", "<%= value %>"]
+<% partitions.each do |label, value, form_options| %>
+      - [<%= label.to_s.to_json %>, <%= value.to_s.to_json %><% unless form_options.empty? %>, {<%= form_options.map { |key, form_value| "#{key.to_s.to_json}: #{form_value.to_s.to_json}" }.join(", ") %>}<% end %>]
 <% end %>
     help: "<%= site_config["partition_help"] || "Set site-specific partitions in /etc/ood/apps/sys/code_tunnel/site.yml." %>"
 
+<% if gpu_count_enabled %>
+  gpu_count:
+    label: <%= (gpu_count["label"] || "GPU count").to_s.to_json %>
+    widget: select
+    cacheable: false
+    hide_by_default: <%= gpu_count["hide_by_default"] == false ? "false" : "true" %>
+    options:
+<% gpu_count_options.each do |label, value| %>
+      - [<%= label.to_s.to_json %>, <%= value.to_s.to_json %>]
+<% end %>
+    value: <%= (gpu_count["default"] || gpu_count_options.first.last).to_s.to_json %>
+    help: <%= (gpu_count["help"] || "Only used for GPU-enabled partitions.").to_s.to_json %>
+
+<% end %>
   tunnel_hours:
     label: Number of hours
     widget: select

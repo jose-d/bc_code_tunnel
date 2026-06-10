@@ -12,19 +12,67 @@ site_config =
 
 submit_native = site_config["submit_native"]
 submit_native = [] unless submit_native.is_a?(Array)
+
+submit_config = site_config["submit"]
+submit_config = {} unless submit_config.is_a?(Hash)
+
+gpu_count_config = site_config["gpu_count"]
+gpu_count_config = {} unless gpu_count_config.is_a?(Hash)
+
+partition_in_native = submit_config["partition_in_native"] == true
+time_format = submit_config["time_format"] || "hours"
+memory_format = submit_config["memory_format"] || "gb"
+nodes = submit_config.fetch("nodes", 1).to_i
+ntasks = submit_config.fetch("ntasks", 1).to_i
+qos = submit_config["qos"]
+
+time_value =
+  if time_format == "minutes"
+    (tunnel_hours.to_i * 60).to_s
+  else
+    "#{tunnel_hours.to_i}:00:00"
+  end
+
+memory_value =
+  if memory_format == "mib"
+    (num_mem.to_i * 1024).to_s
+  else
+    "#{num_mem.to_i}G"
+  end
+
+gpu_partitions = gpu_count_config["partitions"]
+gpu_partitions = [] unless gpu_partitions.is_a?(Array)
+gpu_gres = gpu_count_config["gres"]
+selected_gpu_count = defined?(gpu_count) ? gpu_count.to_i : 0
+add_gpu_gres =
+  gpu_count_config["enabled"] == true &&
+  gpu_gres.to_s != "" &&
+  selected_gpu_count > 0 &&
+  gpu_partitions.include?(custom_queue.to_s)
 %>
 ---
 batch_connect:
   template: "basic"
 
 script:
+<% unless partition_in_native %>
   queue_name: <%= custom_queue %>
+<% end %>
   native:
-    - "--nodes=1"
-    - "--ntasks=1"
-    - "--time=<%= tunnel_hours.to_i %>:00:00"
+    - "--nodes=<%= nodes %>"
+    - "--ntasks=<%= ntasks %>"
+<% if partition_in_native %>
+    - "--partition=<%= custom_queue %>"
+<% end %>
+    - "--time=<%= time_value %>"
+<% if qos && !qos.to_s.empty? %>
+    - "--qos=<%= qos %>"
+<% end %>
     - "--cpus-per-task=<%= num_cpus.to_i %>"
-    - "--mem=<%= num_mem.to_i %>G"
+    - "--mem=<%= memory_value %>"
+<% if add_gpu_gres %>
+    - "--gres=<%= gpu_gres %>:<%= selected_gpu_count %>"
+<% end %>
 <% submit_native.each do |arg| %>
     - "<%= arg %>"
 <% end %>

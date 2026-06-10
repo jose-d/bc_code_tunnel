@@ -3,8 +3,25 @@ cluster: my_cluster
 default_partition: compute
 partition_help: Replace these example partitions with values valid for your site.
 partitions:
-  - [Compute, compute]
-  - [GPU, gpu]
+  - label: Compute
+    value: compute
+  - label: GPU
+    value: gpu
+    form_options:
+      data-hide-gpu-count: "false"
+      data-set-gpu-count: "1"
+
+gpu_count:
+  enabled: true
+  label: GPU count
+  hide_by_default: true
+  partitions: [gpu]
+  gres: gpu
+  options:
+    - ["0 GPUs", "0"]
+    - ["1 GPU", "1"]
+  default: "0"
+  help: Only used when a GPU partition is selected.
 
 hours:
   - [4 hours, "4"]
@@ -24,6 +41,13 @@ memory_gb:
   - ["64", "64"]
   - ["128", "128"]
 default_memory_gb: "16"
+
+submit:
+  partition_in_native: false
+  time_format: hours
+  memory_format: gb
+  nodes: 1
+  ntasks: 1
 
 submit_native: []
 

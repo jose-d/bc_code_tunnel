@@ -81,13 +81,20 @@ Copy [site.yml.example](site.yml.example) and adjust these values:
 | `cluster` | Yes | Open OnDemand cluster ID from `clusters.d`. |
 | `default_partition` | Yes | Default Slurm partition shown in the form. |
 | `partition_help` | No | Help text shown under the partition selector. |
-| `partitions` | Yes | List of `[label, value]` partition options. |
+| `partitions` | Yes | List of partition options. Each option can be `[label, value]` or a map with `label`, `value`, and optional `form_options`. |
+| `gpu_count.enabled` | No | Enables an optional GPU-count selector. |
+| `gpu_count.partitions` | No | Partition values where a positive GPU count should add a GRES request. |
+| `gpu_count.gres` | No | GRES prefix used for GPU requests, for example `gpu` or `gpu:a100`. |
 | `hours` | Yes | List of `[label, value]` wall-time options in hours. |
 | `default_hours` | Yes | Default wall time value. |
 | `cpus` | Yes | List of `[label, value]` CPU-count options. |
 | `default_num_cpus` | Yes | Default CPU count. |
 | `memory_gb` | Yes | List of `[label, value]` memory options in GB. |
 | `default_memory_gb` | Yes | Default memory in GB. |
+| `submit.partition_in_native` | No | Adds `--partition` under native submit options instead of using `queue_name`. |
+| `submit.time_format` | No | `hours` emits `H:00:00`; `minutes` emits total minutes. |
+| `submit.memory_format` | No | `gb` emits `16G`; `mib` emits MiB values. |
+| `submit.qos` | No | Optional Slurm QoS to add as `--qos`. |
 | `submit_native` | No | Extra Slurm arguments passed under `script.native`. |
 | `paths.code` | No | Absolute path to the VS Code CLI. Falls back to `PATH`. |
 | `paths.ttyd` | No | Absolute path to `ttyd`. Falls back to `PATH`. |
@@ -100,8 +107,22 @@ cluster: my_cluster
 default_partition: compute
 partition_help: Use GPU partitions only if your site permits them.
 partitions:
-  - [Compute, compute]
-  - [GPU, gpu]
+  - label: Compute
+    value: compute
+  - label: GPU
+    value: gpu
+    form_options:
+      data-hide-gpu-count: "false"
+      data-set-gpu-count: "1"
+
+gpu_count:
+  enabled: true
+  partitions: [gpu]
+  gres: gpu
+  options:
+    - ["0 GPUs", "0"]
+    - ["1 GPU", "1"]
+  default: "0"
 
 hours:
   - [4 hours, "4"]
@@ -117,6 +138,13 @@ memory_gb:
   - ["16", "16"]
   - ["32", "32"]
 default_memory_gb: "16"
+
+submit:
+  partition_in_native: false
+  time_format: hours
+  memory_format: gb
+  nodes: 1
+  ntasks: 1
 
 submit_native:
   - --account=your_slurm_account
